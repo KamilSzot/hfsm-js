@@ -33,12 +33,12 @@ class States
         @_historyState = @state
       delete @state
   _enter: (nextState, nextSubstates...) ->
+    if @enter
+      @enter()
     @state = @[nextState] ? @_historyState ? @[@_default ? @_history ? @_deepHistory]
     if !@state
       throw "Invalid state"
     delete @_historyState
-    if @state.enter
-      @state.enter()
     if nextSubstates[0] || @state._default || @state._historyState || @state._history || @state._deepHistory
       @state._enter(nextSubstates...)
   to: (states...) ->
