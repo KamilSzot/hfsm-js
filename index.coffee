@@ -26,9 +26,11 @@ class Regions
       state.trigger(args...)
   to: (args...) ->
     for region, state of @all
-      state.to(args...)
+      if state[args[0]]
+        # ignore regions without the target state
+        state.to(args...)
 
-class States
+class State
   constructor: (conf) ->
     for k, v of conf
       @[k] = v
@@ -44,21 +46,21 @@ class States
   _exitDescend: ->
     if @exit
       @exit()
-  _enter: (nextState, nextSubstates...) ->
+  _enter: (nextState, nextSubState...) ->
     if nextState && !@[nextState]
       throw "Invalid state "+nextState
     @_current = @[nextState] ? @_historyState ? @[@_default ? @_history ? @_deepHistory]
     delete @_historyState
-    @_current._enterDescend(nextSubstates...)
-  _enterDescend: (nextSubstates...) ->
+    @_current._enterDescend(nextSubState...)
+  _enterDescend: (nextSubState...) ->
       if @enter
         @enter()
-      if nextSubstates[0] || @_default || @_historyState || @_history || @_deepHistory
-        @_enter(nextSubstates...)
+      if nextSubState[0] || @_default || @_historyState || @_history || @_deepHistory
+        @_enter(nextSubState...)
 
-  to: (states...) ->
+  to: (State...) ->
     @_exit()
-    @_enter(states...)
+    @_enter(State...)
   on: ->
   trigger: (e) ->
     @on(e, @to.bind(@))
@@ -66,9 +68,9 @@ class States
       @_current.trigger(e)
 
 
-states = new States
+State = new State
   _default: 'operational'
-  operational: new States
+  operational: operational = new State
     _deepHistory: 'stopped'
     enter: ->
       l "> operational"
@@ -76,23 +78,23 @@ states = new States
       l "< operational"
     on: (e) ->
       if e == 'flip'
-        states.to('flipped')
-    stopped: new States
+        State.to('flipped')
+    stopped: new State
       enter: ->
         l "> stopped"
       exit: ->
         l "< stopped"
       on: (e) ->
         if e == 'play'
-          states.operational.to('active', 'running')
-    active: new Regions
-      main: active = new States
+          operational.to('active', 'running')
+    active: active = new Regions
+      main: new State
         _default: 'paused'
         enter: ->
           l "> active"
         exit: ->
           l "< active"
-        running: new States
+        running: new State
           enter: ->
             l "> running"
           exit: ->
@@ -100,7 +102,7 @@ states = new States
           on: (e) ->
             if e == 'pause'
               active.to('paused')
-        paused: new States
+        paused: new State
           enter: ->
             l "> paused"
           exit: ->
@@ -108,24 +110,24 @@ states = new States
           on: (e) ->
             if e == 'play'
               active.to('running')
-      light: new States
+      light: new State
         enter: ->
           l "> light"
         exit: ->
           l "< light"
-  flipped: new States
+  flipped: new State
     enter: ->
       l '> flipped'
     exit: ->
       l '< flipped'
     on: (e) ->
       if e == 'flip'
-        states.to('operational')
+        State.to('operational')
 
 
 
-states.to(states._default)
-states.trigger 'play'
-states.trigger 'pause'
-states.trigger 'flip'
-states.trigger 'flip'
+State.to()
+State.trigger 'play'
+State.trigger 'pause'
+State.trigger 'flip'
+State.trigger 'flip'

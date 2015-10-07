@@ -190,8 +190,8 @@
           }
         }
       }),
-      active: new Regions({
-        main: active = new States({
+      active: active = new Regions({
+        main: new States({
           _default: 'paused',
           enter: function() {
             return l("> active");
