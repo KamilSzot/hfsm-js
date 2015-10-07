@@ -6,49 +6,64 @@ l = console.log.bind console
 class Regions
   constructor: (@all) ->
   _exit: (args...) ->
-    @all.forEach (states) ->
-      states._exit(args...)
-  _enter: (args...) ->
-    @all.forEach (states) ->
-      states._enter(args...)
+    for region, state of @all
+      state._exit(args...)
+  _exitDescend: (args...) ->
+    for region, state of @all
+      state._exitDescend(args...)
+  _enter: (next, args...) ->
+    for region, state of @all
+      state._enter(next, args...)
+  _enterDescend: (args...) ->
+    for region, state of @all
+      if state[args[0]]
+        state._enterDescend(args...)
+      else
+        # don't pass rest of the path to regions that don't have action of target name
+        state._enterDescend()
   trigger: (args...) ->
-    @all.forEach (states) ->
-      states.trigger(args...)
+    for region, state of @all
+      state.trigger(args...)
   to: (args...) ->
-    @all.forEach (states) ->
-      states.to(args...)
+    for region, state of @all
+      state.to(args...)
 
 class States
   constructor: (conf) ->
     for k, v of conf
       @[k] = v
   _exit: (keep, deep) ->
-    if @state
+    if @_current
       keep ||= @_deepHistory || @_history
       deep ||= @_deepHistory
-      @state._exit(keep && deep, deep)
-      if @state.exit
-        @state.exit()
+      @_current._exit(keep && deep, deep)
+      @_current._exitDescend()
       if keep
-        @_historyState = @state
-      delete @state
+        @_historyState = @_current
+      delete @_current
+  _exitDescend: ->
+    if @exit
+      @exit()
   _enter: (nextState, nextSubstates...) ->
-    if @enter
-      @enter()
-    @state = @[nextState] ? @_historyState ? @[@_default ? @_history ? @_deepHistory]
-    if !@state
-      throw "Invalid state"
+    if nextState && !@[nextState]
+      throw "Invalid state "+nextState
+    @_current = @[nextState] ? @_historyState ? @[@_default ? @_history ? @_deepHistory]
     delete @_historyState
-    if nextSubstates[0] || @state._default || @state._historyState || @state._history || @state._deepHistory
-      @state._enter(nextSubstates...)
+    @_current._enterDescend(nextSubstates...)
+  _enterDescend: (nextSubstates...) ->
+      if @enter
+        @enter()
+      if nextSubstates[0] || @_default || @_historyState || @_history || @_deepHistory
+        @_enter(nextSubstates...)
+
   to: (states...) ->
     @_exit()
     @_enter(states...)
   on: ->
   trigger: (e) ->
     @on(e, @to.bind(@))
-    if @state
-      @state.trigger(e)
+    if @_current
+      @_current.trigger(e)
 
 
 states = new States
@@ -70,43 +85,34 @@ states = new States
       on: (e) ->
         if e == 'play'
           states.operational.to('active', 'running')
-    active: active = new States
-      _default: 'paused'
-      enter: ->
-        l "> active"
-      exit: ->
-        l "< active"
-      running: new States
+    active: new Regions
+      main: active = new States
+        _default: 'paused'
         enter: ->
-          l "> running"
+          l "> active"
         exit: ->
-          l "< running"
-        on: (e) ->
-          if e == 'pause'
-            active.to('paused')
-
-      # running: new Regions
-      #   motor: new States
-      #     enter: ->
-      #       l "> running"
-      #     exit: ->
-      #       l "< running"
-      #     on: (e) ->
-      #       if e == 'pause'
-      #         active.to('paused')
-      #   light: new States
-      #     enter: ->
-      #       l "> light"
-      #     exit: ->
-      #       l "< light"
-      paused: new States
+          l "< active"
+        running: new States
+          enter: ->
+            l "> running"
+          exit: ->
+            l "< running"
+          on: (e) ->
+            if e == 'pause'
+              active.to('paused')
+        paused: new States
+          enter: ->
+            l "> paused"
+          exit: ->
+            l "< paused"
+          on: (e) ->
+            if e == 'play'
+              active.to('running')
+      light: new States
         enter: ->
-          l "> paused"
+          l "> light"
         exit: ->
-          l "< paused"
-        on: (e) ->
-          if e == 'play'
-            active.to('running')
+          l "< light"
   flipped: new States
     enter: ->
       l '> flipped'
