@@ -46,21 +46,21 @@ class State
   _exitDescend: ->
     if @exit
       @exit()
-  _enter: (nextState, nextSubState...) ->
+  _enter: (nextState, nextSubstates...) ->
     if nextState && !@[nextState]
       throw "Invalid state "+nextState
     @_current = @[nextState] ? @_historyState ? @[@_default ? @_history ? @_deepHistory]
     delete @_historyState
-    @_current._enterDescend(nextSubState...)
-  _enterDescend: (nextSubState...) ->
+    @_current._enterDescend(nextSubstates...)
+  _enterDescend: (nextSubstates...) ->
       if @enter
         @enter()
-      if nextSubState[0] || @_default || @_historyState || @_history || @_deepHistory
-        @_enter(nextSubState...)
+      if nextSubstates[0] || @_default || @_historyState || @_history || @_deepHistory
+        @_enter(nextSubstates...)
 
-  to: (State...) ->
+  to: (states...) ->
     @_exit()
-    @_enter(State...)
+    @_enter(states...)
   on: ->
   trigger: (e) ->
     @on(e, @to.bind(@))
@@ -68,7 +68,7 @@ class State
       @_current.trigger(e)
 
 
-State = new State
+states = new State
   _default: 'operational'
   operational: operational = new State
     _deepHistory: 'stopped'
@@ -78,7 +78,7 @@ State = new State
       l "< operational"
     on: (e) ->
       if e == 'flip'
-        State.to('flipped')
+        states.to('flipped')
     stopped: new State
       enter: ->
         l "> stopped"
@@ -122,12 +122,12 @@ State = new State
       l '< flipped'
     on: (e) ->
       if e == 'flip'
-        State.to('operational')
+        states.to('operational')
 
 
 
-State.to()
-State.trigger 'play'
-State.trigger 'pause'
-State.trigger 'flip'
-State.trigger 'flip'
+states.to()
+states.trigger 'play'
+states.trigger 'pause'
+states.trigger 'flip'
+states.trigger 'flip'
