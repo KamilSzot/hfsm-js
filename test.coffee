@@ -77,14 +77,23 @@ describe 'State machine', ->
 
       last.should.equal '> stopped'
 
-    it 'should enter() "playing" and "light" state after receiving "play message"', ->
+    it 'should enter() "playing" and "light" state after receiving "play" message', ->
       states.trigger 'play'
-
       [..., beforeLast, last] = output
       [last, beforeLast].should.contain '> running'
       [last, beforeLast].should.contain '> light'
 
-# states.trigger 'play'
+    it 'should exit() "active" state enter() "paused" state after receiving "pause" message', ->
+      states.trigger 'play'
+      states.trigger 'pause'
+      
+      [..., beforeLast, last] = output
+      beforeLast
+        .should.equal '< running'
+
+      last
+        .should.equal '> paused'
+
 # states.trigger 'pause'
 # states.trigger 'flip'
 # states.trigger 'flip'
