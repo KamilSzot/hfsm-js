@@ -1,6 +1,5 @@
 util = require 'util'
 
-
 l = console.log.bind console
 
 class Regions
@@ -24,16 +23,17 @@ class Regions
   trigger: (args...) ->
     for region, state of @all
       state.trigger(args...)
-  to: (args...) ->
+  go: (args...) ->
     for region, state of @all
       if state[args[0]]
         # ignore regions without the target state
-        state.to(args...)
+        state.go(args...)
 
 class State
   constructor: (conf) ->
     for k, v of conf
       @[k] = v
+
   _exit: (keep, deep) ->
     if @_current
       keep ||= @_deepHistory || @_history
@@ -58,76 +58,13 @@ class State
       if nextSubstates[0] || @_default || @_historyState || @_history || @_deepHistory
         @_enter(nextSubstates...)
 
-  to: (states...) ->
+  go: (states...) ->
     @_exit()
     @_enter(states...)
   on: ->
   trigger: (e) ->
-    @on(e, @to.bind(@))
+    @on(e, @go.bind(@))
     if @_current
       @_current.trigger(e)
 
-
-states = new State
-  _default: 'operational'
-  operational: operational = new State
-    _deepHistory: 'stopped'
-    enter: ->
-      l "> operational"
-    exit: ->
-      l "< operational"
-    on: (e) ->
-      if e == 'flip'
-        states.to('flipped')
-    stopped: new State
-      enter: ->
-        l "> stopped"
-      exit: ->
-        l "< stopped"
-      on: (e) ->
-        if e == 'play'
-          operational.to('active', 'running')
-    active: active = new Regions
-      main: new State
-        _default: 'paused'
-        enter: ->
-          l "> active"
-        exit: ->
-          l "< active"
-        running: new State
-          enter: ->
-            l "> running"
-          exit: ->
-            l "< running"
-          on: (e) ->
-            if e == 'pause'
-              active.to('paused')
-        paused: new State
-          enter: ->
-            l "> paused"
-          exit: ->
-            l "< paused"
-          on: (e) ->
-            if e == 'play'
-              active.to('running')
-      light: new State
-        enter: ->
-          l "> light"
-        exit: ->
-          l "< light"
-  flipped: new State
-    enter: ->
-      l '> flipped'
-    exit: ->
-      l '< flipped'
-    on: (e) ->
-      if e == 'flip'
-        states.to('operational')
-
-
-
-states.to()
-states.trigger 'play'
-states.trigger 'pause'
-states.trigger 'flip'
-states.trigger 'flip'
+module.exports = {State, Regions}
