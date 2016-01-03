@@ -1,8 +1,8 @@
 {
-  "name": "statemachine",
+  "name": "hfsm-js",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "hfsm-js.coffee",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha -w test.coffee  --require coffee-script/register --compilers coffee:coffee-script"
   },
