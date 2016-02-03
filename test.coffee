@@ -18,16 +18,16 @@ describe 'State machine', ->
           l "> operational"
         exit: ->
           l "< operational"
-        on: (e) ->
-          if e == 'flip'
+        on:
+          flip: ->
             states.go('flipped')
         stopped: new State
           enter: ->
             l "> stopped"
           exit: ->
             l "< stopped"
-          on: (e) ->
-            if e == 'play'
+          on:
+            play: ->
               operational.go('active', 'running')
         active: active = new Regions
           main: new State
@@ -41,16 +41,16 @@ describe 'State machine', ->
                 l "> running"
               exit: ->
                 l "< running"
-              on: (e) ->
-                if e == 'pause'
+              on:
+                pause: (go)->
                   active.go('paused')
             paused: new State
               enter: ->
                 l "> paused"
               exit: ->
                 l "< paused"
-              on: (e) ->
-                if e == 'play'
+              on:
+                play: ->
                   active.go('running')
           light: new State
             enter: ->
@@ -62,8 +62,8 @@ describe 'State machine', ->
           l '> flipped'
         exit: ->
           l '< flipped'
-        on: (e) ->
-          if e == 'flip'
+        on:
+          flip: ->
             states.go('operational')
     states.go()
 
@@ -86,7 +86,7 @@ describe 'State machine', ->
     it 'should exit() "active" state enter() "paused" state after receiving "pause" message', ->
       states.trigger 'play'
       states.trigger 'pause'
-      
+
       [..., beforeLast, last] = output
       beforeLast
         .should.equal '< running'

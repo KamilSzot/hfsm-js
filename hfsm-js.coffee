@@ -10,9 +10,9 @@ class Regions
   _exitDescend: (args...) ->
     for region, state of @all
       state._exitDescend(args...)
-  _enter: (next, args...) ->
+  _enter: (nextState, nextSubstates...) ->
     for region, state of @all
-      state._enter(next, args...)
+      state._enter(nextState, nextSubstates...)
   _enterDescend: (args...) ->
     for region, state of @all
       if state[args[0]]
@@ -23,27 +23,32 @@ class Regions
   trigger: (args...) ->
     for region, state of @all
       state.trigger(args...)
-  go: (args...) ->
+  go: (nextState, nextSubstates...) ->
+    supported = false
     for region, state of @all
-      if state[args[0]]
+      if state[nextState]
         # ignore regions without the target state
-        state.go(args...)
+        state.go(nextState, nextSubstates...)
+        supported = true
+    if !supported
+      throw "Invalid state "+nextState
+
 
 class State
   constructor: (conf) ->
+    @on = {}
     for k, v of conf
       @[k] = v
-
   _exit: (keep, deep) ->
     if @_current
-      keep ||= @_deepHistory || @_history
-      deep ||= @_deepHistory
-      @_current._exit(keep && deep, deep)
-      @_current._exitDescend()
+      keep ||= @_deepHistory? || @_history?
+      deep ||= @_deepHistory?
+      @_current._exitDescend(keep, deep)
       if keep
         @_historyState = @_current
       delete @_current
-  _exitDescend: ->
+  _exitDescend: (keep, deep)->
+    @_exit(keep && deep, deep)
     if @exit
       @exit()
   _enter: (nextState, nextSubstates...) ->
@@ -52,19 +57,19 @@ class State
     @_current = @[nextState] ? @_historyState ? @[@_default ? @_history ? @_deepHistory]
     delete @_historyState
     @_current._enterDescend(nextSubstates...)
-  _enterDescend: (nextSubstates...) ->
+  _enterDescend: (nextState, nextSubstates...) ->
       if @enter
         @enter()
-      if nextSubstates[0] || @_default || @_historyState || @_history || @_deepHistory
-        @_enter(nextSubstates...)
+      if nextState || @_default || @_historyState || @_history || @_deepHistory
+        @_enter(nextState, nextSubstates...)
 
-  go: (states...) ->
+  go: (nextState, nextSubstates...) ->
     @_exit()
-    @_enter(states...)
-  on: ->
-  trigger: (e) ->
-    @on(e, @go.bind(@))
+    @_enter(nextState, nextSubstates...)
+  trigger: (e, payload...) ->
+    if @on[e]
+      @on[e](@go.bind(@), payload...)
     if @_current
-      @_current.trigger(e)
+      @_current.trigger(e, payload...)
 
 module.exports = {State, Regions}
