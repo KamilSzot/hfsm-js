@@ -68,7 +68,7 @@ class State
     @_enter(nextState, nextSubstates...)
   trigger: (e, payload...) ->
     if @on[e]
-      @on[e](@go.bind(@), payload...)
+      @on[e].call(@, payload...)
     if @_current
       @_current.trigger(e, payload...)
 
