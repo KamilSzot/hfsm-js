@@ -53,10 +53,10 @@ describe 'State machine', ->
                 play: ->
                   active.go('running')
           light: new State
-            enter: ->
-              l "> light"
-            exit: ->
-              l "< light"
+              enter: ->
+                l "> light"
+              exit: ->
+                l "< light"
       flipped: new State
         enter: ->
           l '> flipped'
@@ -93,6 +93,18 @@ describe 'State machine', ->
 
       last
         .should.equal '> paused'
+
+    it 'should keep operational substates after flipping twice', ->
+      states.trigger 'play'
+      states.trigger 'flip'
+      states.trigger 'flip'
+
+      [..., beforeLast, last] = output
+      beforeLast
+        .should.equal '> running'
+
+      last
+        .should.equal '> light'
 
 # states.trigger 'pause'
 # states.trigger 'flip'
