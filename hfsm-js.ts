@@ -10,8 +10,8 @@
 const l = console.log.bind(console);
 
 export class Regions {
-  all:{[name:string]:State|Regions}
-  constructor(all:{[name:string]:State|Regions}) {
+  all:{[name:string]:State}
+  constructor(all:{[name:string]:State}) {
     this.all = all;
   }
   _exit(keep:boolean = false, deep:boolean = false) {
@@ -35,12 +35,12 @@ export class Regions {
   _enterState(nextState?:string, ...nextSubstates:string[]) {
       for (let region in this.all) {
         const state = this.all[region];
-        // if (state[nextState]) {
-        //   state._enterState(nextState, ...nextSubstates);
-        // } else {
-        //   // don't pass rest of the path to regions that don't have action of target name
-        //   state._enterState();
-        // }
+        if (nextState !== undefined && state.substates[nextState]) {
+          state._enterState(nextState, ...nextSubstates);
+        } else {
+          // don't pass rest of the path to regions that don't have action of target name
+          state._enterState();
+        }
       }
   }
   trigger(e:string, ...payload:any[]):void {
@@ -53,11 +53,11 @@ export class Regions {
     let supported = false;
     for (let region in this.all) {
       const state = this.all[region];
-      // if (state[nextState]) {
-      //   // ignore regions without the target state
-      //   state.go(nextState, ...Array.from(nextSubstates));
-      //   supported = true;
-      // }
+      if (state.substates[nextState]) {
+        // ignore regions without the target state
+        state.go(nextState, ...Array.from(nextSubstates));
+        supported = true;
+      }
     }
     if (!supported) {
       throw `Invalid state ${nextState}`;
