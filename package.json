@@ -2,9 +2,10 @@
   "name": "hfsm-js",
   "version": "1.0.2",
   "description": "",
-  "main": "hfsm-js.coffee",
+  "main": "out/hfsm-js.js",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha -w --watch-dirs . test.ts  --require ts-node/register"
+    "test": "node ./node_modules/mocha/bin/mocha -w --watch-dirs . test.ts  --require ts-node/register",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
@@ -12,7 +13,6 @@
     "@types/chai": "^4.0.1",
     "@types/mocha": "^5.2.5",
     "chai": "^4.2.0",
-    "coffeescript": "^2.3.2",
     "mocha": "^5.2.0",
     "ts-node": "^7.0.1",
     "typescript": "^3.1.3"

@@ -10,9 +10,7 @@
 
     },
     "files": [
-        "hfsm-js.ts",
-        "test.ts",
-        "try.ts"
+        "hfsm-js.ts"
     ]
 
 }

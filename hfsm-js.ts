@@ -66,10 +66,10 @@ export class Regions {
 }
 
 type EventHandler = () => void
-
+type EventHandlerWithStateReplacementOption = (replacer?:(nextSubstateReplacement:string, ...nextSubstatesReplacement:string[]) => void) => void;
 
 export class State {
-  on:{[name:string]:() => void};
+  on:{[name:string]:EventHandler};
   _current:State|Regions;
   _historyState:State|Regions;
 
@@ -77,18 +77,18 @@ export class State {
   _history:string;
   _deepHistory:string;
 
-  exit?: () => void;
-  enter?: () => void;
+  exit?: EventHandler;
+  enter?: EventHandlerWithStateReplacementOption;
   substates: {[name:string]:State|Regions}
 
   constructor(conf:{
     on?: {[eventName: string]:EventHandler}, 
-    enter?: EventHandler, 
+    enter?: EventHandlerWithStateReplacementOption, 
     exit?: EventHandler,
     _default?: string,
     _history?: string,
     _deepHistory?: string,
-  } & {[name:string]:any }) {
+  } & {[name:string]:any } = {}) {
     var { enter, exit, on, _default, _history, _deepHistory, ...substates } = conf;
     this.enter = enter;
     this.exit = exit;
@@ -130,7 +130,9 @@ export class State {
   }
   _enterState(nextState?:string, ...nextSubstates:string[]):void {
       if (this.enter) {
-        this.enter();
+        this.enter((nextSubstateReplacement:string, ...nextSubstatesReplacement:string[]) => { 
+          [nextState, nextSubstates] = [nextSubstateReplacement, nextSubstatesReplacement];
+         });
       }
       this._switchToState(nextState, ...nextSubstates);
     }

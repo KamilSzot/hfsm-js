@@ -2,10 +2,10 @@ module.exports = () => {
   return {
     files: [
       {pattern: 'node_modules/*', instrument: false},
-      'hfsm-js.coffee'
+      'hfsm-js.ts'
     ],
     tests: [
-      'test.coffee'
+      'test.ts'
     ],
     env: {
       type: 'node'
